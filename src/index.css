@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    * {
+        @apply focus-visible:outline-primary focus-visible:-outline-offset-2 focus-visible:outline;
+    }
+}
+
+@layer utilities {
+    input[type="number"].hide-terrible-firefox-spinners-sorry-moz-i-love-you-but-please-give-me-a-pseudoclass-for-spinners {
+        -moz-appearance: textfield;
+    }
+}

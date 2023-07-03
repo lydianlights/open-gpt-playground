@@ -1,0 +1,38 @@
+.root {
+    .delete-button {
+        visibility: hidden;
+    }
+
+    .role-button:hover,
+    .role-button:focus-visible {
+        @apply bg-grey-200;
+    }
+
+    .textarea textarea {
+        @apply bg-transparent border-transparent;
+    }
+
+    .textarea:focus-within textarea {
+        @apply bg-white border-primary-light;
+    }
+}
+
+.root:hover {
+    & .delete-button {
+        visibility: visible;
+    }
+
+    .role-button {
+        @apply bg-grey-200;
+    }
+}
+
+.root:focus-within {
+    & .delete-button {
+        visibility: visible;
+    }
+
+    .role-button {
+        @apply bg-grey-200;
+    }
+}

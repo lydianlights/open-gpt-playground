@@ -4,6 +4,7 @@ import { render } from "solid-js/web";
 
 import App from "./App";
 
-const root = document.getElementById("root");
+const root = document.getElementById("root")!;
+// root.classList.add("dark");
 
-render(() => <App />, root!);
+render(() => <App />, root);
