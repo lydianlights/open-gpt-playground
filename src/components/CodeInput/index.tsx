@@ -1,11 +1,5 @@
-import {
-    onMount,
-    type Component,
-    Show,
-    createEffect,
-    createSignal,
-    on,
-} from "solid-js";
+import type { Component } from "solid-js";
+import { onMount, Show, createEffect, createSignal, on } from "solid-js";
 import {
     keymap,
     highlightSpecialChars,

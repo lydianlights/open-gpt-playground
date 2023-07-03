@@ -1,9 +1,11 @@
-import { createSignal, type Component, createMemo, useContext } from "solid-js";
+import type { Component } from "solid-js";
+import { createSignal, createMemo, useContext } from "solid-js";
 import { FaSolidPlus, FaSolidTrash } from "solid-icons/fa";
 import SectionLabel from "@/components/SectionLabel";
 import Button from "@/components/Button";
 import Combobox from "@/components/Combobox";
-import { ChatContext, GPTFunction } from "@/contexts/ChatContext";
+import type { GPTFunction } from "@/contexts/ChatContext";
+import { ChatContext } from "@/contexts/ChatContext";
 import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import CodeInput from "@/components/CodeInput";

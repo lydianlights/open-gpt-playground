@@ -1,4 +1,5 @@
-import { splitProps, type Component, type JSX } from "solid-js";
+import type { Component, JSX } from "solid-js";
+import { splitProps } from "solid-js";
 import { defaultProps } from "@/utils/solid-helpers";
 
 export type HorizontalRuleProps = {} & JSX.HTMLAttributes<HTMLHRElement>;

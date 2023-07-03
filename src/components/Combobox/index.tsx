@@ -1,10 +1,5 @@
-import {
-    createMemo,
-    createSignal,
-    type Component,
-    Show,
-    createEffect,
-} from "solid-js";
+import type { Component } from "solid-js";
+import { createMemo, createSignal, Show, createEffect } from "solid-js";
 import { Combobox as KCombobox } from "@kobalte/core";
 import { FiChevronDown } from "solid-icons/fi";
 import { VsClose } from "solid-icons/vs";

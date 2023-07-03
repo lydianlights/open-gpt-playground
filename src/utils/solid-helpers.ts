@@ -1,4 +1,5 @@
-import { type MergeProps, mergeProps } from "solid-js";
+import type { MergeProps } from "solid-js";
+import { mergeProps } from "solid-js";
 
 export function defaultProps<T, K extends keyof T>(
     props: T,

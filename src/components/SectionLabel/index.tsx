@@ -1,5 +1,5 @@
-import { defaultProps } from "@/utils/solid-helpers";
 import type { Component, JSX } from "solid-js";
+import { defaultProps } from "@/utils/solid-helpers";
 
 export type SectionLabelProps = JSX.HTMLAttributes<HTMLDivElement>;
 const SectionLabel: Component<SectionLabelProps> = (unresolvedProps) => {

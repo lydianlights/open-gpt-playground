@@ -2,7 +2,8 @@ import { createMemo, createSignal, type Component } from "solid-js";
 import { FaSolidPlus, FaSolidTrash } from "solid-icons/fa";
 import ExternalLink from "@/components/ExternalLink";
 import Button from "@/components/Button";
-import Combobox, { ComboboxOption } from "@/components/Combobox";
+import type { ComboboxOption } from "@/components/Combobox";
+import Combobox from "@/components/Combobox";
 import VerticalRule from "@/components/VerticalRule";
 
 const presetList = createMemo<ComboboxOption[]>(() => {

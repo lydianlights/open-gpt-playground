@@ -1,6 +1,8 @@
-import { useContext, type Component, For } from "solid-js";
+import type { Component } from "solid-js";
+import { useContext, For } from "solid-js";
 import { FaSolidPlus } from "solid-icons/fa";
-import { ChatContext, GPTMessageRole } from "@/contexts/ChatContext";
+import type { GPTMessageRole } from "@/contexts/ChatContext";
+import { ChatContext } from "@/contexts/ChatContext";
 import HorizontalRule from "@/components/HorizontalRule";
 import Button from "@/components/Button";
 import ChatMessage from "./ChatMessage";

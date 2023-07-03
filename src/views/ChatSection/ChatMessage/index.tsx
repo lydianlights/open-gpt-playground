@@ -1,15 +1,12 @@
-import { type Component, Show, createMemo, useContext } from "solid-js";
+import type { Component } from "solid-js";
+import { Show, createMemo, useContext } from "solid-js";
 import { TbMathFunction } from "solid-icons/tb";
 import { VsClose } from "solid-icons/vs";
 import Button from "@/components/Button";
 import SectionLabel from "@/components/SectionLabel";
 import Textarea from "@/components/Textarea";
-import {
-    ChatContext,
-    GPTMessage,
-    GPTMessageRole,
-    MESSAGE_ROLES,
-} from "@/contexts/ChatContext";
+import type { GPTMessage, GPTMessageRole } from "@/contexts/ChatContext";
+import { ChatContext, MESSAGE_ROLES } from "@/contexts/ChatContext";
 import CodeInput from "@/components/CodeInput";
 import css from "./styles.module.css";
 

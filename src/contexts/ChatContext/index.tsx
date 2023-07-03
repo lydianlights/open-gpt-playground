@@ -1,6 +1,6 @@
-import { createContext, Component } from "solid-js";
+import type { Component, JSX } from "solid-js";
+import { createContext } from "solid-js";
 import { createStore } from "solid-js/store";
-import { JSX } from "solid-js/web/types/jsx";
 import { nanoid } from "nanoid";
 
 // ====== GPT TYPES ===== //

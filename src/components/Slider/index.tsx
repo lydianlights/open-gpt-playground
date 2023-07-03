@@ -1,14 +1,9 @@
-import {
-    Component,
-    createEffect,
-    createMemo,
-    createSignal,
-    createUniqueId,
-} from "solid-js";
+import type { Component } from "solid-js";
+import { createMemo, createSignal, createUniqueId } from "solid-js";
 import * as slider from "@zag-js/slider";
 import { normalizeProps, useMachine } from "@zag-js/solid";
 import { defaultProps } from "@/utils/solid-helpers";
-import { MachineContext } from "@zag-js/slider/dist/slider.types";
+import type { MachineContext } from "@zag-js/slider/dist/slider.types";
 
 export type SliderProps = {
     label?: string;

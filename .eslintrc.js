@@ -43,5 +43,13 @@ module.exports = {
                 },
             },
         ],
+        "@typescript-eslint/consistent-type-imports": [
+            ERROR,
+            {
+                prefer: "type-imports",
+                disallowTypeAnnotations: true,
+                fixStyle: "separate-type-imports",
+            },
+        ],
     },
 };
