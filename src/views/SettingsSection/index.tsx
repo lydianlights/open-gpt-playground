@@ -2,6 +2,9 @@ import { useContext, type Component } from "solid-js";
 import { ChatContext, MODELS } from "@/contexts/ChatContext";
 import Combobox from "@/components/Combobox";
 import Slider from "@/components/Slider";
+import Button from "@/components/Button";
+import Dialog from "@/components/Dialog";
+import ViewCode from "./ViewCode";
 
 const modelOptions = Object.entries(MODELS).map(([key, val]) => ({
     value: key,
@@ -66,6 +69,21 @@ const SettingsSection: Component<SettingsSectionProps> = () => {
                 onChange={(value) => setState.setPresencePenalty(value)}
                 class="mt-4 w-full"
             />
+            <Dialog
+                title="View Code"
+                description="Summary of the request parameters in JSON format"
+                trigger={(triggerProps) => (
+                    <Button
+                        variation="secondary"
+                        {...triggerProps}
+                        class="mt-6"
+                    >
+                        View Code
+                    </Button>
+                )}
+            >
+                <ViewCode />
+            </Dialog>
         </div>
     );
 };
