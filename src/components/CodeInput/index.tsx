@@ -8,7 +8,7 @@ import {
     lineNumbers,
     EditorView,
 } from "@codemirror/view";
-import { Compartment, EditorState, StateEffect } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import {
     defaultHighlightStyle,
     syntaxHighlighting,
@@ -30,6 +30,7 @@ export type CodeInputProps = {
     label?: string;
     placeholder?: string;
     value?: string;
+    onInput?: (value: string) => void;
     onChange?: (value: string) => void;
     disabled?: boolean;
     height?: string;
@@ -48,7 +49,8 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
 
     const layoutCompartment = new Compartment();
     const disabledCompartment = new Compartment();
-    const updateHandlerCompartment = new Compartment();
+    const inputHandlerCompartment = new Compartment();
+    const changeHandlerCompartment = new Compartment();
 
     onMount(() => {
         const state = EditorState.create({
@@ -75,7 +77,8 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
                 ]),
                 layoutCompartment.of([]),
                 disabledCompartment.of([]),
-                updateHandlerCompartment.of([]),
+                inputHandlerCompartment.of([]),
+                changeHandlerCompartment.of([]),
             ],
         });
 
@@ -112,18 +115,38 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
         });
     });
 
+    // Update onInput listener if prop changes
+    createEffect(() => {
+        const onInput = props.onInput;
+        editor.dispatch({
+            effects: inputHandlerCompartment.reconfigure(
+                EditorView.updateListener.of(({ docChanged, state }) => {
+                    if (docChanged && onInput) {
+                        const newValue = state.doc.toString();
+                        setInternalValue(newValue);
+                        onInput(newValue);
+                    }
+                })
+            ),
+        });
+    });
+
     // Update onChange listener if prop changes
     createEffect(() => {
         const onChange = props.onChange;
         editor.dispatch({
-            effects: updateHandlerCompartment.reconfigure(
-                EditorView.updateListener.of(({ docChanged, state }) => {
-                    if (docChanged && onChange) {
-                        const newValue = state.doc.toString();
-                        setInternalValue(newValue);
-                        onChange(newValue);
+            effects: changeHandlerCompartment.reconfigure(
+                EditorView.updateListener.of(
+                    ({ focusChanged, view, state }) => {
+                        if (focusChanged && onChange) {
+                            const isFocused = view.hasFocus;
+                            if (!isFocused) {
+                                const newValue = state.doc.toString();
+                                onChange(newValue);
+                            }
+                        }
                     }
-                })
+                )
             ),
         });
     });

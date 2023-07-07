@@ -1,20 +1,29 @@
 import type { Component } from "solid-js";
-import { createSignal, createMemo, useContext } from "solid-js";
+import {
+    createSignal,
+    createMemo,
+    useContext,
+    createEffect,
+    Show,
+} from "solid-js";
 import { FaSolidPlus, FaSolidTrash } from "solid-icons/fa";
+import Ajv from "ajv";
 import SectionLabel from "@/components/SectionLabel";
 import Button from "@/components/Button";
 import Combobox from "@/components/Combobox";
 import type { GPTFunction } from "@/contexts/ChatContext";
-import { ChatContext } from "@/contexts/ChatContext";
+import { ChatContext, getDefaultFunction } from "@/contexts/ChatContext";
 import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import CodeInput from "@/components/CodeInput";
 
+const ajv = new Ajv();
+
 export type FunctionSectionProps = {};
 const FunctionSection: Component<FunctionSectionProps> = () => {
     const [state, { functions }] = useContext(ChatContext);
-    const [selectedFunctionId, setSelectedFunctionId] =
-        createSignal<string>("");
+    const [selectedFunctionId, setSelectedFunctionId] = createSignal("");
+    const [paramsError, setParamsError] = createSignal("");
 
     const selectedFunction = createMemo<GPTFunction | undefined>(() =>
         state.functions.find((f) => f.id === selectedFunctionId())
@@ -28,11 +37,7 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
     );
 
     function handleCreateFunction() {
-        const newFunction = functions.create({
-            name: "new_function",
-            description: "",
-            parameters: "",
-        });
+        const newFunction = functions.create(getDefaultFunction());
         setSelectedFunctionId(newFunction.id);
     }
 
@@ -41,6 +46,23 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
         if (!id) return;
         functions.delete(id);
         setSelectedFunctionId("");
+    }
+
+    createEffect(() => {
+        selectedFunctionId();
+        setParamsError("");
+    });
+
+    function handleParamValidation(value: string) {
+        let msg = "";
+        try {
+            const json = JSON.parse(value);
+            ajv.compile(json);
+        } catch {
+            msg =
+                "*Invalid JSON Schema format. Check the API Reference for details.";
+        }
+        setParamsError(msg);
     }
 
     return (
@@ -94,19 +116,25 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
                 class="mt-2 w-full flex-none"
                 inputClass="resize-none"
             />
-            <CodeInput
-                label="Parameters"
-                value={selectedFunction()?.parameters ?? ""}
-                onChange={(value) => {
-                    const id = selectedFunctionId();
-                    if (!id) return;
-                    functions.setParameters(id, value);
-                }}
-                placeholder="Describe function parameters in JSON format"
-                disabled={!selectedFunctionId()}
-                height="15rem"
-                class="mt-2 w-full flex-none"
-            />
+            <div class="mt-2 flex-none">
+                <Show when={!!paramsError()}>
+                    <div class="mt-2 text-danger text-sm">{paramsError()}</div>
+                </Show>
+                <CodeInput
+                    label="Parameters"
+                    value={selectedFunction()?.parameters ?? ""}
+                    onInput={(value) => {
+                        const id = selectedFunctionId();
+                        if (!id) return;
+                        functions.setParameters(id, value);
+                    }}
+                    placeholder="Describe function parameters in JSON format"
+                    disabled={!selectedFunctionId()}
+                    onChange={handleParamValidation}
+                    height="15rem"
+                    class="w-full"
+                />
+            </div>
         </div>
     );
 };

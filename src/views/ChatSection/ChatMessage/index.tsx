@@ -9,6 +9,7 @@ import type { GPTMessage, GPTMessageRole } from "@/contexts/ChatContext";
 import { ChatContext, MESSAGE_ROLES } from "@/contexts/ChatContext";
 import CodeInput from "@/components/CodeInput";
 import css from "./styles.module.css";
+import Input from "@/components/Input";
 
 export type ChatMessageProps = {
     message: GPTMessage;
@@ -16,11 +17,13 @@ export type ChatMessageProps = {
 const ChatMessage: Component<ChatMessageProps> = (props) => {
     const [, { messages }] = useContext(ChatContext);
 
-    function getDefaultUseFunctionContent() {
+    function getDefaultUseFunction() {
+        if (props.message.role === "user" && props.message.functionName) {
+            return true;
+        }
         if (
-            props.message.functionContent &&
-            (props.message.role === "assistant" ||
-                props.message.role === "user")
+            props.message.role === "assistant" &&
+            (props.message.functionName || props.message.functionParameters)
         ) {
             return true;
         }
@@ -37,10 +40,7 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
             nextRole = "user";
         }
         messages.setRole(props.message.id, nextRole);
-        messages.setUseFunctionContent(
-            props.message.id,
-            getDefaultUseFunctionContent()
-        );
+        messages.setUseFunction(props.message.id, getDefaultUseFunction());
     }
 
     function getContentPlaceholderText() {
@@ -53,82 +53,116 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
         return "";
     }
 
-    function getFunctionPlaceholderText() {
+    function getFunctionNamePlaceholderText() {
         if (props.message.role === "user") {
-            return '{"name": "force_function_call"} OR "none"';
+            return "function_to_force_call";
         }
         if (props.message.role === "assistant") {
-            return '{"name": "called_function", "arguments": { ... }}';
+            return "called_function";
         }
         if (props.message.role === "function") {
-            return "Enter a response from the function requested by the agent";
+            return "function_name";
         }
         return "";
     }
 
-    const inputsToShow = createMemo<"both" | "content" | "function">(() => {
+    function getFunctionParamtersPlaceholderText() {
+        if (props.message.role === "assistant") {
+            return "Function arguments in JSON format";
+        }
+        if (props.message.role === "function") {
+            return "Output from the function";
+        }
+        return "";
+    }
+
+    type InputVisibility = {
+        content: boolean;
+        functionName: boolean;
+        functionParameters: boolean;
+    };
+    const isVisible = createMemo<InputVisibility>(() => {
+        const _isVisible: InputVisibility = {
+            content: false,
+            functionName: false,
+            functionParameters: false,
+        };
         if (props.message.role === "user") {
-            if (props.message.useFunctionContent) {
-                return "both";
+            _isVisible.content = true;
+            if (props.message.useFunction) {
+                _isVisible.functionName = true;
             }
-            return "content";
+        } else if (props.message.role === "assistant") {
+            if (props.message.useFunction) {
+                _isVisible.functionName = true;
+                _isVisible.functionParameters = true;
+            } else {
+                _isVisible.content = true;
+            }
         } else if (props.message.role === "function") {
-            return "function";
+            _isVisible.functionName = true;
+            _isVisible.functionParameters = true;
         }
-        if (props.message.useFunctionContent) {
-            return "function";
-        }
-        return "content";
+        return _isVisible;
     });
 
     return (
         <div
-            class={`${css["root"]} w-full flex gap-2 px-4 py-6 hocus-within:bg-grey-100`}
+            class={`${css["root"]} relative w-full flex flex-col gap-2 p-4 hocus-within:bg-grey-100`}
         >
-            <div class="w-8 flex-none">
-                <Button
-                    variation={
-                        props.message.useFunctionContent
-                            ? "primary"
-                            : "secondary"
-                    }
-                    onClick={() => {
-                        messages.setUseFunctionContent(
-                            props.message.id,
-                            !props.message.useFunctionContent
-                        );
-                    }}
-                    class={`px-[0.5rem] py-[0.2rem] ${
-                        props.message.useFunctionContent
-                            ? "opacity-100"
-                            : "opacity-50"
-                    } ${
-                        props.message.role === "function"
-                            ? "invisible"
-                            : "visible"
-                    }`}
-                >
-                    <TbMathFunction size={16} />
-                </Button>
+            <div class="flex gap-2 items-center">
+                <div class="flex-none w-32">
+                    <Button
+                        variation="transparent"
+                        class={css["role-button"]}
+                        onClick={handleCycleRole}
+                    >
+                        <SectionLabel>
+                            {MESSAGE_ROLES[props.message.role]}
+                        </SectionLabel>
+                    </Button>
+                </div>
+                <div class="flex-none">
+                    <Button
+                        variation={
+                            props.message.useFunction ? "primary" : "secondary"
+                        }
+                        onClick={() => {
+                            messages.setUseFunction(
+                                props.message.id,
+                                !props.message.useFunction
+                            );
+                        }}
+                        class={`px-[0.5rem] py-[0.2rem] ${
+                            props.message.useFunction
+                                ? "opacity-100"
+                                : "opacity-50"
+                        } ${
+                            props.message.role === "function"
+                                ? "invisible"
+                                : "visible"
+                        }`}
+                    >
+                        <TbMathFunction size={16} />
+                    </Button>
+                </div>
+                <div class="flex-none">
+                    <Show keyed when={isVisible().functionName}>
+                        <Input
+                            placeholder={getFunctionNamePlaceholderText()}
+                            value={props.message.functionName}
+                            onChange={(e) =>
+                                messages.setFunctionName(
+                                    props.message.id,
+                                    e.currentTarget.value
+                                )
+                            }
+                        />
+                    </Show>
+                </div>
             </div>
-            <div class="w-32 flex-none">
-                <Button
-                    variation="transparent"
-                    class={css["role-button"]}
-                    onClick={handleCycleRole}
-                >
-                    <SectionLabel>
-                        {MESSAGE_ROLES[props.message.role]}
-                    </SectionLabel>
-                </Button>
-            </div>
-            <div class="flex-1 flex flex-col gap-4">
-                <Show
-                    when={
-                        inputsToShow() === "both" ||
-                        inputsToShow() === "content"
-                    }
-                >
+            <div class="flex-1 flex flex-col gap-2 py-2">
+                <Show keyed when={isVisible().content}>
                     <Textarea
                         placeholder={getContentPlaceholderText()}
                         autoGrow
@@ -143,24 +177,21 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
                         inputClass="py-1"
                     />
                 </Show>
-                <Show
-                    when={
-                        inputsToShow() === "both" ||
-                        inputsToShow() === "function"
-                    }
-                    keyed
-                >
+                <Show keyed when={isVisible().functionParameters}>
                     <CodeInput
-                        placeholder={getFunctionPlaceholderText()}
-                        value={props.message.functionContent}
-                        onChange={(value) =>
-                            messages.setFunctionContent(props.message.id, value)
+                        placeholder={getFunctionParamtersPlaceholderText()}
+                        value={props.message.functionParameters}
+                        onInput={(value) =>
+                            messages.setFunctionParameters(
+                                props.message.id,
+                                value
+                            )
                         }
-                        class={`relative top-1 ${css["code-input"]}`}
+                        class={`mt-1 flex-1 ${css["code-input"]}`}
                     />
                 </Show>
             </div>
-            <div class="flex-none">
+            <div class="absolute top-2 right-2">
                 <Button
                     onClick={() => messages.delete(props.message.id)}
                     variation="transparent"

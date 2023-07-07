@@ -5,3 +5,7 @@ export function normalizeString(str: string): string {
         .replace(/\p{Diacritic}/gu, "")
         .toLowerCase();
 }
+
+export function isTruthy(str: string): boolean {
+    return str.toLowerCase() !== "false" && !!str;
+}

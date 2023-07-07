@@ -1,0 +1,36 @@
+.checkbox-root {
+    .checkbox-control {
+        @apply bg-white border border-grey-400;
+    }
+
+    .checkbox-control[data-checked] {
+        @apply bg-primary border-transparent;
+    }
+
+    &:has(input:focus-visible) {
+        @apply outline outline-primary;
+    }
+
+    &:hover,
+    &:has(input:focus-visible) {
+        .checkbox-control {
+            @apply bg-grey-200 border border-grey-400;
+        }
+
+        .checkbox-control[data-checked] {
+            @apply bg-primary-dark border-transparent;
+        }
+    }
+
+    @supports not selector(:has(*)) {
+        &:focus-within {
+            .checkbox-control {
+                @apply bg-grey-200 border border-grey-400;
+            }
+
+            .checkbox-control[data-checked] {
+                @apply bg-primary-dark border-transparent;
+            }
+        }
+    }
+}

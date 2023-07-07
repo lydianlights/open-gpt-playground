@@ -2,6 +2,10 @@ import type { Component, JSX } from "solid-js";
 import { createContext } from "solid-js";
 import { createStore } from "solid-js/store";
 import { nanoid } from "nanoid";
+import type { Optional } from "@/types/helpers";
+import { Configuration, OpenAIApi } from "openai";
+import { apiKey } from "../global";
+import { formatChatCompletionRequest } from "@/utils/open-ai";
 
 // ====== GPT TYPES ===== //
 // TODO: Get via API
@@ -25,17 +29,13 @@ export const MESSAGE_ROLES = {
 
 export type GPTMessageRole = keyof typeof MESSAGE_ROLES;
 
-export type GPTFunctionCall = {
-    name: string;
-    arguments: Record<string, string>;
-};
-
 export type GPTMessage = {
     id: string;
     role: GPTMessageRole;
     content: string;
-    functionContent: string;
-    useFunctionContent: boolean;
+    functionName: string;
+    functionParameters: string;
+    useFunction: boolean;
 };
 
 export type GPTFunction = {
@@ -60,6 +60,7 @@ export type ChatContextState = {
     messages: GPTMessage[];
     functions: GPTFunction[];
     modelOptions: GPTModelOptions;
+    error: string;
 };
 
 export type ChatContextFuncs = {
@@ -67,9 +68,10 @@ export type ChatContextFuncs = {
     messages: {
         setRole: (id: string, value: GPTMessageRole) => void;
         setContent: (id: string, value: string) => void;
-        setFunctionContent: (id: string, value: string) => void;
-        setUseFunctionContent: (id: string, value: boolean) => void;
-        create: (value: Omit<GPTMessage, "id">) => GPTMessage;
+        setFunctionName: (id: string, value: string) => void;
+        setFunctionParameters: (id: string, value: string) => void;
+        setUseFunction: (id: string, value: boolean) => void;
+        create: (value: Optional<GPTMessage, "id">) => GPTMessage;
         delete: (id: string) => void;
     };
     functions: {
@@ -85,7 +87,9 @@ export type ChatContextFuncs = {
     setTopP: (value: number) => void;
     setFreqencyPenalty: (value: number) => void;
     setPresencePenalty: (value: number) => void;
-    submit: () => void;
+
+    submit: () => Promise<void>;
+    setError: (value: string) => void;
 };
 
 export type ChatContextValue = [
@@ -94,49 +98,37 @@ export type ChatContextValue = [
 ];
 
 // ====== DEFAULTS ===== //
-function getDefaultState(): ChatContextState {
+export function getDefaultMessage(): GPTMessage {
+    return {
+        id: nanoid(),
+        role: "user",
+        content: "",
+        functionName: "",
+        functionParameters: "",
+        useFunction: false,
+    };
+}
+
+export function getDefaultFunction(): GPTFunction {
+    return {
+        id: nanoid(),
+        name: "new_function",
+        description: "",
+        parameters: `{
+  "type": "object",
+  "properties": {
+    "param1": { "type": "string", "description": "The first parameter" },
+    "param2": { "type": "integer", "description": "The second parameter" }
+  },
+  "required": []
+}`,
+    };
+}
+
+export function getDefaultState(): ChatContextState {
     return {
         systemMessage: "",
-        messages: [
-            {
-                id: "1",
-                role: "user",
-                content: "lorem ipsum",
-                functionContent: "",
-                useFunctionContent: false,
-            },
-            {
-                id: "2",
-                role: "assistant",
-                content: "",
-                functionContent: JSON.stringify({
-                    name: "get_butts",
-                    arguments: { arg1: "beep", arg2: "boop" },
-                }),
-                useFunctionContent: true,
-            },
-            {
-                id: "3",
-                role: "function",
-                content: "",
-                functionContent: '"butts butts butts"',
-                useFunctionContent: false,
-            },
-            {
-                id: "4",
-                role: "assistant",
-                content: "Here is butts: butts",
-                functionContent: "",
-                useFunctionContent: false,
-            },
-            {
-                id: "5",
-                role: "user",
-                content: "Thank you",
-                functionContent: "",
-                useFunctionContent: false,
-            },
-        ],
+        messages: [getDefaultMessage()],
         functions: [],
         modelOptions: {
             model: DEFAULT_MODEL,
@@ -146,6 +138,7 @@ function getDefaultState(): ChatContextState {
             frequencyPenalty: 0,
             presencePenalty: 0,
         },
+        error: "",
     };
 }
 
@@ -174,18 +167,23 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
                 if (index < 0) return;
                 setState("messages", index, "content", () => value);
             },
-            setFunctionContent: (id, value) => {
+            setFunctionName: (id, value) => {
                 const index = state.messages.findIndex((m) => m.id === id);
                 if (index < 0) return;
-                setState("messages", index, "functionContent", () => value);
+                setState("messages", index, "functionName", () => value);
             },
-            setUseFunctionContent: (id, value) => {
+            setFunctionParameters: (id, value) => {
                 const index = state.messages.findIndex((m) => m.id === id);
                 if (index < 0) return;
-                setState("messages", index, "useFunctionContent", () => value);
+                setState("messages", index, "functionParameters", () => value);
+            },
+            setUseFunction: (id, value) => {
+                const index = state.messages.findIndex((m) => m.id === id);
+                if (index < 0) return;
+                setState("messages", index, "useFunction", () => value);
             },
             create: (value) => {
-                const newMessage = { id: nanoid(10), ...value };
+                const newMessage = { id: `usergen-${nanoid(20)}`, ...value };
                 setState("messages", (prev) => [...prev, newMessage]);
                 return newMessage;
             },
@@ -212,7 +210,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
                 setState("functions", index, "parameters", () => value);
             },
             create: (value) => {
-                const newFunction = { id: nanoid(10), ...value };
+                const newFunction = { id: `func-${nanoid(10)}`, ...value };
                 setState("functions", (prev) => [...prev, newFunction]);
                 return newFunction;
             },
@@ -234,10 +232,44 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
             setState("modelOptions", "presencePenalty", () => value),
 
         submit,
+        setError: (value) => setState("error", () => value),
     };
 
-    function submit() {
-        console.log("BOOP");
+    async function submit() {
+        funcs.setError("");
+        try {
+            const configuration = new Configuration({
+                apiKey: apiKey(),
+            });
+            const openai = new OpenAIApi(configuration);
+            const request = formatChatCompletionRequest(state);
+            const response = await openai.createChatCompletion({
+                ...request,
+            });
+            const data = response.data;
+            const message = response.data.choices[0].message!;
+            funcs.messages.create({
+                id: data.id!,
+                role: message.role!,
+                content: message.content!,
+                functionName: "",
+                functionParameters: "",
+                useFunction: false,
+            });
+        } catch (e) {
+            let msg = "";
+            if (
+                e.response?.status === 400 &&
+                e.response?.data?.error?.message
+            ) {
+                msg =
+                    "Request failed. Make sure all functions' parameters are a valid JSON Schema.";
+                console.error(e.response?.data?.error?.message);
+            } else {
+                msg = e.toString();
+            }
+            funcs.setError(msg);
+        }
     }
 
     const ctx: ChatContextValue = [state, funcs];
