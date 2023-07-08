@@ -6,7 +6,6 @@ import {
     Show,
     createSignal,
     onMount,
-    createEffect,
 } from "solid-js";
 import { defaultProps } from "@/utils/solid-helpers";
 

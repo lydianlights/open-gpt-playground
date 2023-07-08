@@ -1,10 +1,10 @@
 import type { Component } from "solid-js";
-import { createMemo, createSignal, Show, createEffect } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 import { Combobox as KCombobox } from "@kobalte/core";
 import { FiChevronDown } from "solid-icons/fi";
 import { VsClose } from "solid-icons/vs";
 import { normalizeString } from "@/utils/string-helpers";
-import { defaultProps } from "@/utils/solid-helpers";
+import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
 import css from "./styles.module.css";
 
 export type ComboboxOption = {
@@ -74,7 +74,7 @@ const Combobox: Component<ComboboxProps> = (unresolvedProps) => {
         props.onChange("");
     }
 
-    createEffect(() => {
+    createEffectOn([value], () => {
         inputRef.value = value().label;
     });
 

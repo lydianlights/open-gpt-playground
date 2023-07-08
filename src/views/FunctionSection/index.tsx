@@ -1,11 +1,5 @@
 import type { Component } from "solid-js";
-import {
-    createSignal,
-    createMemo,
-    useContext,
-    createEffect,
-    Show,
-} from "solid-js";
+import { createSignal, createMemo, useContext, Show, untrack } from "solid-js";
 import { FaSolidPlus, FaSolidTrash } from "solid-icons/fa";
 import Ajv from "ajv";
 import SectionLabel from "@/components/SectionLabel";
@@ -16,6 +10,7 @@ import { ChatContext, getDefaultFunction } from "@/contexts/ChatContext";
 import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import CodeInput from "@/components/CodeInput";
+import { createEffectOn } from "@/utils/solid-helpers";
 
 const ajv = new Ajv();
 
@@ -48,19 +43,20 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
         setSelectedFunctionId("");
     }
 
-    createEffect(() => {
-        selectedFunctionId();
-        setParamsError("");
+    createEffectOn([selectedFunction], () => {
+        validateParams(selectedFunction()?.parameters ?? "");
     });
 
-    function handleParamValidation(value: string) {
+    function validateParams(value: string) {
         let msg = "";
-        try {
-            const json = JSON.parse(value);
-            ajv.compile(json);
-        } catch {
-            msg =
-                "*Invalid JSON Schema format. Check the API Reference for details.";
+        if (value) {
+            try {
+                const json = JSON.parse(value);
+                ajv.compile(json);
+            } catch {
+                msg =
+                    "*Invalid JSON Schema format. Check the API Reference for details.";
+            }
         }
         setParamsError(msg);
     }
@@ -130,7 +126,7 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
                     }}
                     placeholder="Describe function parameters in JSON format"
                     disabled={!selectedFunctionId()}
-                    onChange={handleParamValidation}
+                    onChange={validateParams}
                     height="15rem"
                     class="w-full"
                 />

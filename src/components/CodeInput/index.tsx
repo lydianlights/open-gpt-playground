@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { onMount, Show, createEffect, createSignal, on } from "solid-js";
+import { onMount, Show, createSignal } from "solid-js";
 import {
     keymap,
     highlightSpecialChars,
@@ -24,7 +24,7 @@ import {
 } from "@codemirror/autocomplete";
 import { json } from "@codemirror/lang-json";
 import { customized } from "./theme";
-import { defaultProps } from "@/utils/solid-helpers";
+import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
 
 export type CodeInputProps = {
     label?: string;
@@ -89,7 +89,7 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
     });
 
     // Update editor resize mode
-    createEffect(() => {
+    createEffectOn([() => props.height], () => {
         let theme = {};
         if (props.height) {
             theme = {
@@ -106,7 +106,7 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
     });
 
     // Update disabled state
-    createEffect(() => {
+    createEffectOn([() => props.disabled], () => {
         editor.dispatch({
             effects: disabledCompartment.reconfigure([
                 EditorState.readOnly.of(props.disabled),
@@ -116,15 +116,14 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
     });
 
     // Update onInput listener if prop changes
-    createEffect(() => {
-        const onInput = props.onInput;
+    createEffectOn([() => props.onInput], () => {
         editor.dispatch({
             effects: inputHandlerCompartment.reconfigure(
                 EditorView.updateListener.of(({ docChanged, state }) => {
-                    if (docChanged && onInput) {
+                    if (docChanged && props.onInput) {
                         const newValue = state.doc.toString();
                         setInternalValue(newValue);
-                        onInput(newValue);
+                        props.onInput(newValue);
                     }
                 })
             ),
@@ -132,17 +131,16 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
     });
 
     // Update onChange listener if prop changes
-    createEffect(() => {
-        const onChange = props.onChange;
+    createEffectOn([() => props.onChange], () => {
         editor.dispatch({
             effects: changeHandlerCompartment.reconfigure(
                 EditorView.updateListener.of(
                     ({ focusChanged, view, state }) => {
-                        if (focusChanged && onChange) {
+                        if (focusChanged && props.onChange) {
                             const isFocused = view.hasFocus;
                             if (!isFocused) {
                                 const newValue = state.doc.toString();
-                                onChange(newValue);
+                                props.onChange(newValue);
                             }
                         }
                     }
@@ -152,23 +150,18 @@ const CodeInput: Component<CodeInputProps> = (unresolvedProps) => {
     });
 
     // Update editor when value prop changes
-    createEffect(
-        on(
-            () => props.value,
-            () => {
-                if (props.value === internalValue()) return;
-                const transaction = editor.state.update({
-                    changes: {
-                        from: 0,
-                        to: editor.state.doc.length,
-                        insert: props.value,
-                    },
-                });
-                const update = editor.state.update(transaction);
-                editor.update([update]);
-            }
-        )
-    );
+    createEffectOn([() => props.value], () => {
+        if (props.value === internalValue()) return;
+        const transaction = editor.state.update({
+            changes: {
+                from: 0,
+                to: editor.state.doc.length,
+                insert: props.value,
+            },
+        });
+        const update = editor.state.update(transaction);
+        editor.update([update]);
+    });
 
     return (
         <div class={`flex flex-col ${props.class}`}>

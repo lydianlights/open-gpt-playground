@@ -2,11 +2,9 @@ import type { Component, JSX, JSXElement } from "solid-js";
 import {
     Show,
     children,
-    createEffect,
     createMemo,
     createSignal,
     createUniqueId,
-    on,
 } from "solid-js";
 import { Portal } from "solid-js/web";
 import { Transition } from "solid-transition-group";
@@ -15,7 +13,7 @@ import type { MachineContext } from "@zag-js/dialog/dist/dialog.types";
 import { normalizeProps, useMachine } from "@zag-js/solid";
 import { VsClose } from "solid-icons/vs";
 import Button from "@/components/Button";
-import { defaultProps } from "@/utils/solid-helpers";
+import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
 
 export type DialogProps = {
     title?: string;
@@ -42,16 +40,11 @@ const Dialog: Component<DialogProps> = (unresolvedProps) => {
         }
     }
 
-    createEffect(
-        on(
-            () => props.open,
-            () => {
-                if (props.open !== undefined) {
-                    setUncontrolledOpen(props.open);
-                }
-            }
-        )
-    );
+    createEffectOn([() => props.open], () => {
+        if (props.open !== undefined) {
+            setUncontrolledOpen(props.open);
+        }
+    });
 
     const isOpen = createMemo<boolean>(() => {
         if (props.open !== undefined) return props.open;

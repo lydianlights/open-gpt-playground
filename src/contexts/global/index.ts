@@ -1,4 +1,4 @@
-import { createEffect, createSignal } from "solid-js";
+import { createSignal } from "solid-js";
 import {
     decrypt,
     deleteLocalStorage,
@@ -7,6 +7,7 @@ import {
     saveLocalStorage,
 } from "@/utils/local-storage";
 import { isTruthy } from "@/utils/string-helpers";
+import { createEffectOn } from "@/utils/solid-helpers";
 
 export const LS_KEY = {
     API_KEY: "apiKey",
@@ -19,17 +20,15 @@ export const [rememberAPIKey, setRememberAPIKey] = createSignal<boolean>(
     isTruthy(loadLocalStorage(LS_KEY.REMEMBER_API_KEY))
 );
 
-createEffect(() => {
-    const currAPIKey = apiKey();
-    const currRememberAPIKey = rememberAPIKey();
+createEffectOn([apiKey, rememberAPIKey], () => {
     saveLocalStorage(
         LS_KEY.REMEMBER_API_KEY,
-        currRememberAPIKey ? "true" : "false"
+        rememberAPIKey() ? "true" : "false"
     );
-    if (!currRememberAPIKey) {
+    if (!rememberAPIKey()) {
         deleteLocalStorage(LS_KEY.API_KEY);
     } else {
-        saveAPIKey(currAPIKey);
+        saveAPIKey(apiKey());
     }
 });
 

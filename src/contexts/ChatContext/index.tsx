@@ -263,8 +263,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
                 e.response?.data?.error?.message
             ) {
                 msg =
-                    "Request failed. Make sure all functions' parameters are a valid JSON Schema.";
-                console.error(e.response?.data?.error?.message);
+                    "Request failed. Make sure all functions' parameters describe a valid JSON Schema.";
             } else {
                 msg = e.toString();
             }
