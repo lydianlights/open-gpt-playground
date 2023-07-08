@@ -25,7 +25,7 @@ const Button: Component<ButtonProps> = (unresolvedProps) => {
 
     return (
         <button
-            class={`py-[0.5em] px-4 rounded transition-colors whitespace-nowrap disabled:opacity-70 disabled:pointer-events-none ${variation()} ${
+            class={`h-[2.5em] px-4 flex justify-center items-center rounded transition-colors whitespace-nowrap disabled:opacity-70 disabled:pointer-events-none ${variation()} ${
                 split.class
             }`}
             {...rest}

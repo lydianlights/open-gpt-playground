@@ -73,18 +73,20 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
                     class="w-72"
                 />
                 <Button
+                    aria-label="new function"
                     variation="secondary"
-                    class="hocus-visible:text-primary"
+                    class="square-button hocus-visible:text-primary"
                     onClick={handleCreateFunction}
                 >
-                    <FaSolidPlus fill="currentColor" />
+                    <FaSolidPlus fill="currentColor" size={14} />
                 </Button>
                 <Button
+                    aria-label="delete function"
                     variation="secondary"
-                    class="hocus-visible:text-danger"
+                    class="square-button hocus-visible:text-danger"
                     onClick={handleDeleteFunction}
                 >
-                    <FaSolidTrash fill="currentColor" />
+                    <FaSolidTrash fill="currentColor" size={14} />
                 </Button>
             </div>
             <Input

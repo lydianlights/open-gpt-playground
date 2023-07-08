@@ -45,11 +45,12 @@ const ChatSection: Component<ChatSectionProps> = () => {
 
                 <div class="mt-4 ml-4">
                     <Button
-                        onClick={handleCreateMessage}
+                        aria-label="new message"
                         variation="secondary"
-                        class="hocus-visible:text-primary"
+                        onClick={handleCreateMessage}
+                        class="square-button hocus-visible:text-primary"
                     >
-                        <FaSolidPlus fill="currentColor" />
+                        <FaSolidPlus fill="currentColor" size={14} />
                     </Button>
                 </div>
             </div>

@@ -92,8 +92,9 @@ const Dialog: Component<DialogProps> = (unresolvedProps) => {
                         >
                             <Button
                                 {...api().closeTriggerProps}
+                                aria-label="close"
                                 variation="transparent"
-                                class="absolute top-2 right-2 hocus-visible:bg-grey-200 hocus-visible:text-danger"
+                                class="absolute top-2 right-2 square-button hocus-visible:bg-grey-200 hocus-visible:text-danger"
                             >
                                 <VsClose />
                             </Button>

@@ -52,13 +52,18 @@ const SiteHeader: Component = () => {
                     class="w-72"
                 />
                 <Button
+                    aria-label="create preset"
                     variation="secondary"
-                    class="hocus-visible:text-primary"
+                    class="square-button hocus-visible:text-primary"
                 >
-                    <FaSolidPlus fill="currentColor" />
+                    <FaSolidPlus fill="currentColor" size={14} />
                 </Button>
-                <Button variation="secondary" class="hocus-visible:text-danger">
-                    <FaSolidTrash fill="currentColor" />
+                <Button
+                    aria-label="delete preset"
+                    variation="secondary"
+                    class="square-button hocus-visible:text-danger"
+                >
+                    <FaSolidTrash fill="currentColor" size={14} />
                 </Button>
                 <VerticalRule class="mx-4 py-3" />
                 <div class="flex flex-initial items-center text-sm">

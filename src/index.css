@@ -8,6 +8,12 @@
     }
 }
 
+@layer components {
+    button.square-button {
+        @apply w-[2.0em] h-[2.0em];
+    }
+}
+
 @layer utilities {
     input[type="number"].hide-terrible-firefox-spinners-sorry-moz-i-love-you-but-please-give-me-a-pseudoclass-for-spinners {
         -moz-appearance: textfield;

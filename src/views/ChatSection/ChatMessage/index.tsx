@@ -113,17 +113,21 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
             <div class="flex gap-2 items-center">
                 <div class="flex-none w-32">
                     <Button
+                        aria-label={`Message role: ${
+                            MESSAGE_ROLES[props.message.role]
+                        } -- click to change`}
                         variation="transparent"
                         class={css["role-button"]}
                         onClick={handleCycleRole}
                     >
-                        <SectionLabel>
+                        <SectionLabel aria-hidden>
                             {MESSAGE_ROLES[props.message.role]}
                         </SectionLabel>
                     </Button>
                 </div>
                 <div class="flex-none">
                     <Button
+                        aria-label="toggle function"
                         variation={
                             props.message.useFunction ? "primary" : "secondary"
                         }
@@ -133,7 +137,7 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
                                 !props.message.useFunction
                             );
                         }}
-                        class={`px-[0.5rem] py-[0.2rem] ${
+                        class={`square-button ${
                             props.message.useFunction
                                 ? "opacity-100"
                                 : "opacity-50"
@@ -193,9 +197,10 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
             </div>
             <div class="absolute top-2 right-2">
                 <Button
+                    aria-label="delete message"
                     onClick={() => messages.delete(props.message.id)}
                     variation="transparent"
-                    class={`${css["delete-button"]} hocus-visible:bg-grey-200 hocus-visible:text-danger px-[0.5rem] py-[0.2rem]`}
+                    class={`${css["delete-button"]} square-button hocus-visible:bg-grey-200 hocus-visible:text-danger px-[0.5rem] py-[0.2rem]`}
                 >
                     <VsClose />
                 </Button>

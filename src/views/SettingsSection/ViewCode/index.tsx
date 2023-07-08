@@ -41,7 +41,7 @@ const ViewCode: Component<ViewCodeProps> = () => {
                 <Button
                     onClick={handleCopy}
                     variation="secondary"
-                    class="h-8 py-0"
+                    class="h-[2rem] px-[0.6rem]"
                 >
                     <Show when={!copied()} fallback="Copied!">
                         <FiClipboard />

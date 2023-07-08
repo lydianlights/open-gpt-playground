@@ -74,8 +74,8 @@ const SettingsSection: Component<SettingsSectionProps> = () => {
                 description="Summary of the request parameters in JSON format"
                 trigger={(triggerProps) => (
                     <Button
-                        variation="secondary"
                         {...triggerProps}
+                        variation="secondary"
                         class="mt-6"
                     >
                         View Code
