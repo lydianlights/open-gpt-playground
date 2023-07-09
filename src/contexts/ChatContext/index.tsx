@@ -1,11 +1,19 @@
 import type { Component, JSX } from "solid-js";
-import { createContext } from "solid-js";
+import { createContext, onMount } from "solid-js";
+import type { SetStoreFunction } from "solid-js/store";
 import { createStore } from "solid-js/store";
 import { nanoid } from "nanoid";
+import debounce from "lodash/debounce";
+import merge from "lodash/merge";
 import type { Optional } from "@/types/helpers";
 import { Configuration, OpenAIApi } from "openai";
-import { apiKey } from "../global";
 import { formatChatCompletionRequest } from "@/utils/open-ai";
+import { loadSessionStorage, saveSessionStorage } from "@/utils/local-storage";
+import { STORAGE } from "@/constants/local-storage";
+import { apiKey } from "@/contexts/global";
+
+const SCHEMA = "openGPTPlayground";
+const VERSION = "1.0";
 
 // ====== GPT TYPES ===== //
 // TODO: Get via API
@@ -151,7 +159,13 @@ export const ChatContext = createContext<ChatContextValue>([
 // ====== PROVIDER ===== //
 export type ChatProviderProps = { children?: JSX.Element };
 export const ChatProvider: Component<ChatProviderProps> = (props) => {
-    const [state, setState] = createStore(getDefaultState());
+    const [state, _setState] = createStore(getDefaultState());
+
+    // Intercept setState so we can save changes to local storage
+    const setState: SetStoreFunction<ChatContextState> = (...args: any) => {
+        (_setState as any)(...args);
+        trackStateChanges(state);
+    };
 
     const funcs: ChatContextFuncs = {
         setSystemMessage: (value) => setState("systemMessage", () => value),
@@ -270,6 +284,36 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
             funcs.setError(msg);
         }
     }
+
+    onMount(() => {
+        try {
+            const str = loadSessionStorage(STORAGE.STATE);
+            const json = JSON.parse(str);
+            const { schema, version, ...loadedState } = json;
+            if (schema !== SCHEMA || !version) {
+                throw new Error("Tried to load invalid state data!");
+            }
+            const defaultState = getDefaultState();
+            const state = merge(defaultState, loadedState);
+            setState(state);
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    const trackStateChanges = debounce((state: ChatContextState) => {
+        try {
+            const json: any = {
+                schema: SCHEMA,
+                version: VERSION,
+                ...state,
+            };
+            const str = JSON.stringify(json);
+            saveSessionStorage(STORAGE.STATE, str);
+        } catch (e) {
+            console.error(e);
+        }
+    }, 1000);
 
     const ctx: ChatContextValue = [state, funcs];
     return (

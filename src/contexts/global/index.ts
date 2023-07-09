@@ -8,25 +8,21 @@ import {
 } from "@/utils/local-storage";
 import { isTruthy } from "@/utils/string-helpers";
 import { createEffectOn } from "@/utils/solid-helpers";
-
-export const LS_KEY = {
-    API_KEY: "apiKey",
-    REMEMBER_API_KEY: "rememberAPIKey",
-};
+import { STORAGE } from "@/constants/local-storage";
 
 export const [apiKey, setAPIKey] = createSignal<string>(loadAPIKey());
 
 export const [rememberAPIKey, setRememberAPIKey] = createSignal<boolean>(
-    isTruthy(loadLocalStorage(LS_KEY.REMEMBER_API_KEY))
+    isTruthy(loadLocalStorage(STORAGE.REMEMBER_API_KEY))
 );
 
 createEffectOn([apiKey, rememberAPIKey], () => {
     saveLocalStorage(
-        LS_KEY.REMEMBER_API_KEY,
+        STORAGE.REMEMBER_API_KEY,
         rememberAPIKey() ? "true" : "false"
     );
     if (!rememberAPIKey()) {
-        deleteLocalStorage(LS_KEY.API_KEY);
+        deleteLocalStorage(STORAGE.API_KEY);
     } else {
         saveAPIKey(apiKey());
     }
@@ -34,11 +30,11 @@ createEffectOn([apiKey, rememberAPIKey], () => {
 
 function saveAPIKey(apiKey: string) {
     const encoded = apiKey ? encrypt(apiKey) : "";
-    saveLocalStorage(LS_KEY.API_KEY, encoded);
+    saveLocalStorage(STORAGE.API_KEY, encoded);
 }
 
 function loadAPIKey(): string {
-    const encoded = loadLocalStorage(LS_KEY.API_KEY);
+    const encoded = loadLocalStorage(STORAGE.API_KEY);
     if (!encoded) return "";
     return decrypt(encoded);
 }

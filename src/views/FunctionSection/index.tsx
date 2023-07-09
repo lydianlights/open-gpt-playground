@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createSignal, createMemo, useContext, Show, untrack } from "solid-js";
+import { createSignal, createMemo, useContext, Show } from "solid-js";
 import { FaSolidPlus, FaSolidTrash } from "solid-icons/fa";
 import Ajv from "ajv";
 import SectionLabel from "@/components/SectionLabel";
@@ -17,8 +17,16 @@ const ajv = new Ajv();
 export type FunctionSectionProps = {};
 const FunctionSection: Component<FunctionSectionProps> = () => {
     const [state, { functions }] = useContext(ChatContext);
-    const [selectedFunctionId, setSelectedFunctionId] = createSignal("");
+    const [selectedFunctionId, setSelectedFunctionId] = createSignal(
+        state.functions.length > 0 ? state.functions[0].id : ""
+    );
     const [paramsError, setParamsError] = createSignal("");
+
+    createEffectOn([() => state.functions.length], () => {
+        if (!selectedFunctionId() && state.functions.length > 0) {
+            setSelectedFunctionId(state.functions[0].id);
+        }
+    });
 
     const selectedFunction = createMemo<GPTFunction | undefined>(() =>
         state.functions.find((f) => f.id === selectedFunctionId())
@@ -40,7 +48,11 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
         const id = selectedFunctionId();
         if (!id) return;
         functions.delete(id);
-        setSelectedFunctionId("");
+        if (state.functions.length > 0) {
+            setSelectedFunctionId(state.functions[0].id);
+        } else {
+            setSelectedFunctionId("");
+        }
     }
 
     createEffectOn([selectedFunction], () => {

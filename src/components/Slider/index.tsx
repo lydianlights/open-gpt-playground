@@ -2,7 +2,7 @@ import type { Component } from "solid-js";
 import { createMemo, createSignal, createUniqueId } from "solid-js";
 import * as slider from "@zag-js/slider";
 import { normalizeProps, useMachine } from "@zag-js/solid";
-import { defaultProps } from "@/utils/solid-helpers";
+import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
 import type { MachineContext } from "@zag-js/slider/dist/slider.types";
 
 export type SliderProps = {
@@ -29,6 +29,12 @@ const Slider: Component<SliderProps> = (unresolvedProps) => {
     const [internalValue, setInternalValue] = createSignal(
         props.value ?? props.min
     );
+
+    createEffectOn([() => props.value], () => {
+        if (props.value !== undefined) {
+            setInternalValue(props.value);
+        }
+    });
 
     function updateValue(value: number) {
         let newValue;

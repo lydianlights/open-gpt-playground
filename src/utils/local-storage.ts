@@ -25,6 +25,31 @@ export function deleteLocalStorage(key: string): void {
     }
 }
 
+export function saveSessionStorage(key: string, value: string): void {
+    try {
+        window.sessionStorage.setItem(key, value);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+export function loadSessionStorage(key: string, fallback = ""): string {
+    try {
+        return window.sessionStorage.getItem(key) ?? fallback;
+    } catch (e) {
+        console.error(e);
+    }
+    return fallback;
+}
+
+export function deleteSessionStorage(key: string): void {
+    try {
+        window.sessionStorage.removeItem(key);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 export function encrypt(plaintext: string): string {
     return AES.encrypt(
         plaintext,

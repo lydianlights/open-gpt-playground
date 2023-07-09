@@ -22,6 +22,7 @@
         "@zag-js/solid": "^0.10.3",
         "ajv": "^8.12.0",
         "crypto-js": "^4.1.1",
+        "lodash": "^4.17.21",
         "nanoid": "^4.0.2",
         "openai": "^3.3.0",
         "solid-icons": "^1.0.8",
@@ -30,6 +31,7 @@
     },
     "devDependencies": {
         "@types/crypto-js": "^4.1.1",
+        "@types/lodash": "^4.14.195",
         "@typescript-eslint/eslint-plugin": "^5.60.0",
         "@typescript-eslint/parser": "^5.60.0",
         "autoprefixer": "^10.4.14",

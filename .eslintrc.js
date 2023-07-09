@@ -34,6 +34,7 @@ module.exports = {
     rules: {
         "prettier/prettier": ERROR,
         "@typescript-eslint/no-non-null-assertion": OFF,
+        "@typescript-eslint/no-explicit-any": OFF,
         "@typescript-eslint/ban-types": [
             ERROR,
             {
