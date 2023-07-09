@@ -1,10 +1,12 @@
 import type { Component } from "solid-js";
-import { createMemo, createSignal, Show } from "solid-js";
-import { Combobox as KCombobox } from "@kobalte/core";
+import { createMemo, createSignal, createUniqueId, For, Show } from "solid-js";
+import * as combobox from "@zag-js/combobox";
+import { normalizeProps, useMachine } from "@zag-js/solid";
+import type { MachineContext } from "@zag-js/combobox/dist/combobox.types";
+import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
+import { normalizeString } from "@/utils/string-helpers";
 import { FiChevronDown } from "solid-icons/fi";
 import { VsClose } from "solid-icons/vs";
-import { normalizeString } from "@/utils/string-helpers";
-import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
 import css from "./styles.module.css";
 
 export type ComboboxOption = {
@@ -13,123 +15,128 @@ export type ComboboxOption = {
 };
 
 export type ComboboxProps = {
+    label?: string;
+    placeholder?: string;
     value: string;
     onChange: (value: string) => void;
     options: ComboboxOption[];
-    label?: string;
-    placeholder?: string;
+    disabled?: boolean;
+    preserveOrder?: boolean;
     class?: string;
 };
-
 const Combobox: Component<ComboboxProps> = (unresolvedProps) => {
     const props = defaultProps(unresolvedProps, {
         label: "",
         placeholder: "",
+        disabled: false,
+        preserveOrder: false,
         class: "",
     });
-    let inputRef: HTMLInputElement;
-    const [filterText, setFilterText] = createSignal("");
-    const [isOpen, setIsOpen] = createSignal(false);
-
-    const value = createMemo<ComboboxOption>(() => {
-        return (
-            props.options.find((o) => o.value === props.value) ?? {
-                value: "",
-                label: "",
-            }
-        );
-    });
+    const [filter, setFilter] = createSignal("");
 
     const filteredOptions = createMemo<ComboboxOption[]>(() =>
         props.options.filter((option) =>
-            normalizeString(option.label).includes(
-                normalizeString(filterText())
-            )
+            normalizeString(option.label).includes(normalizeString(filter()))
         )
     );
 
-    function handleChange(value: ComboboxOption) {
-        if (props.value === value.value) return;
-        props.onChange(value.value);
-    }
-
-    function handleInputChange(value: string) {
-        setFilterText(value);
-    }
-
-    function handleOpenChange(
-        value: boolean,
-        triggerMode?: KCombobox.ComboboxTriggerMode
-    ) {
-        setIsOpen(value);
-        if (!value) return;
-        if (triggerMode === "manual") {
-            setFilterText("");
-        } else {
-            setFilterText(inputRef.value);
+    const context = createMemo<Partial<MachineContext>>(() => ({
+        onInputChange: (e) => {
+            setFilter(e.value);
+        },
+        disabled: props.disabled,
+        placeholder: props.placeholder,
+        onSelect: (e) => {
+            props.onChange(e.value ?? "");
+        },
+        onOpen: () => {
+            setFilter("");
+        },
+    }));
+    const [state, send] = useMachine(
+        combobox.machine({
+            id: createUniqueId(),
+            openOnClick: true,
+        }),
+        {
+            context,
         }
-    }
+    );
+    const api = createMemo(() => combobox.connect(state, send, normalizeProps));
+
+    createEffectOn([() => props.value], () => {
+        api().setValue(props.value);
+    });
+
+    createEffectOn([() => api().selectedValue], () => {
+        const selectedItem = props.options.find(
+            (o) => o.value === api().selectedValue
+        );
+        api().setInputValue(selectedItem?.label ?? "");
+    });
 
     function handleXClicked() {
         props.onChange("");
     }
 
-    createEffectOn([value], () => {
-        inputRef.value = value().label;
-    });
-
     return (
-        <KCombobox.Root
-            options={filteredOptions()}
-            value={value()}
-            onChange={handleChange}
-            onInputChange={handleInputChange}
-            onOpenChange={handleOpenChange}
-            open={isOpen()}
-            placeholder={props.placeholder}
-            optionValue="value"
-            optionLabel="label"
-            multiple={false}
-            itemComponent={(localProps) => (
-                <KCombobox.Item
-                    item={localProps.item}
-                    class="flex items-center justify-between h-8 px-1 outline-none select-none data-[highlighted]:bg-primary data-[highlighted]:text-white"
+        <div>
+            <div
+                {...api().rootProps}
+                class={`flex flex-col w-52 ${props.class}`}
+            >
+                <label {...api().labelProps} class="text-sm">
+                    {props.label}
+                </label>
+                <div
+                    {...api().controlProps}
+                    class="inline-flex justify-between rounded border-grey-300 border focus-within:border-primary-light transition-colors"
                 >
-                    <KCombobox.ItemLabel>
-                        {localProps.item.rawValue.label}
-                    </KCombobox.ItemLabel>
-                </KCombobox.Item>
-            )}
-            class={`flex flex-col w-52 ${props.class}`}
-        >
-            <KCombobox.Label class="text-sm">{props.label}</KCombobox.Label>
-            <KCombobox.Control class="inline-flex justify-between rounded outline-none border-grey-300 border focus-within:border-primary-light transition-colors">
-                <KCombobox.Input
-                    ref={inputRef!}
-                    class="appearance-none inline-flex w-full h-8 bg-transparent outline-none pl-2"
-                    onclick={() => {
-                        handleOpenChange(!isOpen(), "manual");
-                    }}
-                />
-                <Show when={!!props.value}>
-                    <button onClick={handleXClicked}>
-                        <VsClose />
-                    </button>
-                </Show>
-                <KCombobox.Trigger class="appearance-none inline-flex justify-center items-center w-auto outline-none px-2">
-                    <KCombobox.Icon>
+                    <input
+                        {...api().inputProps}
+                        class="appearance-none w-full h-8 bg-transparent outline-none pl-2"
+                    />
+                    <Show when={!!props.value}>
+                        <button
+                            onClick={handleXClicked}
+                            class="outline-transparent focus-visible:outline-primary"
+                        >
+                            <VsClose />
+                        </button>
+                    </Show>
+                    <button
+                        {...api().triggerProps}
+                        class="appearance-none inline-flex justify-center items-center w-auto px-2"
+                    >
                         <FiChevronDown />
-                    </KCombobox.Icon>
-                </KCombobox.Trigger>
-            </KCombobox.Control>
-            <KCombobox.Portal>
-                <KCombobox.Content
-                    class={`${css["animate-dropdown-content"]} bg-grey-0 rounded border border-grey-300 shadow`}
-                >
-                    <KCombobox.Listbox class="outline-none overflow-y-auto max-h-80 text-black" />
-                </KCombobox.Content>
-            </KCombobox.Portal>
-        </KCombobox.Root>
+                    </button>
+                </div>
+            </div>
+            <div {...api().positionerProps} style={{ "z-index": "999" }}>
+                <Show when={filteredOptions().length > 0}>
+                    <ul
+                        {...api().contentProps}
+                        data-expanded={api().isOpen}
+                        class={`relative -top-1 overflow-y-auto max-h-80 text-black bg-grey-0 rounded border border-grey-300 shadow ${css["animate-dropdown-content"]}`}
+                    >
+                        <For each={filteredOptions()}>
+                            {(item, index) => (
+                                <li
+                                    {...api().getOptionProps({
+                                        index: index(),
+                                        value: item.value,
+                                        label: item.label,
+                                    })}
+                                    class="flex items-center justify-between h-8 px-1 select-none data-[highlighted]:bg-primary data-[highlighted]:text-white"
+                                >
+                                    {item.label}
+                                </li>
+                            )}
+                        </For>
+                    </ul>
+                </Show>
+            </div>
+        </div>
     );
 };
 

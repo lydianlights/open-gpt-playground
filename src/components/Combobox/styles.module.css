@@ -1,10 +1,9 @@
 .animate-dropdown-content {
-    transform-origin: var(--kb-combobox-content-transform-origin);
-    animation: contentHide 250ms ease-in;
+    animation: contentHide 150ms ease-in;
 }
 
 .animate-dropdown-content[data-expanded] {
-    animation: contentShow 250ms ease-out;
+    animation: contentShow 150ms ease-out;
 }
 
 @keyframes contentShow {

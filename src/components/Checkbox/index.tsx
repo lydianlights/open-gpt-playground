@@ -18,12 +18,12 @@ const Checkbox: Component<CheckboxProps> = (unresolvedProps) => {
         class: "",
     });
 
-    const context: Partial<MachineContext> = {
+    const context = createMemo<Partial<MachineContext>>(() => ({
         checked: props.value,
         onChange: (e) => {
             props.onChange(!!e.checked);
         },
-    };
+    }));
     const [state, send] = useMachine(
         checkbox.machine({ id: createUniqueId() }),
         {
