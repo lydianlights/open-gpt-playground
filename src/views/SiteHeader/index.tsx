@@ -123,12 +123,13 @@ const SiteHeader: Component = () => {
                         </div>
                     </Dialog>
                 </div>
-                <div class="flex flex-initial items-center text-sm">
+                {/* Will add these... one day */}
+                {/* <div class="flex flex-initial items-center text-sm">
                     <Button variation="secondary">Export Data</Button>
                 </div>
                 <div class="flex flex-initial items-center text-sm">
                     <Button variation="secondary">Import Data</Button>
-                </div>
+                </div> */}
             </div>
         </div>
     );
