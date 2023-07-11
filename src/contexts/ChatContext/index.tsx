@@ -5,6 +5,7 @@ import { createStore } from "solid-js/store";
 import { nanoid } from "nanoid";
 import debounce from "lodash/debounce";
 import merge from "lodash/merge";
+import cloneDeep from "lodash/cloneDeep";
 import type { Optional } from "@/types/helpers";
 import { Configuration, OpenAIApi } from "openai";
 import { formatChatCompletionRequest } from "@/utils/open-ai";
@@ -250,7 +251,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
         setError: (value) => setState("error", () => value),
         loadState: (state) => {
             const defaultState = getDefaultState();
-            setState(merge(defaultState, state));
+            setState(merge(defaultState, cloneDeep(state)));
         },
     };
 

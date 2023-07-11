@@ -10,7 +10,7 @@ const Main: Component = () => {
         <div class="w-screen h-screen bg-grey-0 text-black flex flex-col">
             <SiteHeader />
             <div class="p-6 flex-1 overflow-auto flex justify-between gap-6 h-full">
-                <div class="flex flex-col gap-6 flex-1 flex-grow-[1]">
+                <div class="flex flex-col gap-6 flex-none w-[25%] min-w-[30rem]">
                     <div class="flex-1 min-h-[12rem]">
                         <SystemSection />
                     </div>
@@ -18,10 +18,10 @@ const Main: Component = () => {
                         <FunctionSection />
                     </div>
                 </div>
-                <div class="flex-1 flex-grow-[2]">
+                <div class="flex-1">
                     <ChatSection />
                 </div>
-                <div class="flex-initial w-52">
+                <div class="flex-none w-52">
                     <SettingsSection />
                 </div>
             </div>

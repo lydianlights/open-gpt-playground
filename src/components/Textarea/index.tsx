@@ -7,7 +7,7 @@ import {
     createSignal,
     onMount,
 } from "solid-js";
-import { defaultProps } from "@/utils/solid-helpers";
+import { createEffectOn, defaultProps } from "@/utils/solid-helpers";
 
 type TextAreaInputEvent = InputEvent & {
     currentTarget: HTMLTextAreaElement;
@@ -42,6 +42,13 @@ const Textarea: Component<TextareaProps> = (unresolvedProps) => {
     const [scrollHeight, setScrollHeight] = createSignal<number>(0);
 
     onMount(() => {
+        setTimeout(() => {
+            setScrollHeight(inputRef.scrollHeight + 2);
+        }, 0);
+    });
+
+    createEffectOn([() => rest.value], () => {
+        setScrollHeight(0);
         setScrollHeight(inputRef.scrollHeight + 2);
     });
 
