@@ -22,9 +22,11 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
     );
     const [paramsError, setParamsError] = createSignal("");
 
-    createEffectOn([() => state.functions.length], () => {
+    createEffectOn([() => state.functions], () => {
         if (!selectedFunctionId() && state.functions.length > 0) {
             setSelectedFunctionId(state.functions[0].id);
+        } else if (state.functions.length === 0) {
+            setSelectedFunctionId("");
         }
     });
 
@@ -87,16 +89,16 @@ const FunctionSection: Component<FunctionSectionProps> = () => {
                 <Button
                     aria-label="new function"
                     variation="secondary"
-                    class="square-button hocus-visible:text-primary"
                     onClick={handleCreateFunction}
+                    class="square-button hocus-visible:text-primary"
                 >
                     <FaSolidPlus fill="currentColor" size={14} />
                 </Button>
                 <Button
                     aria-label="delete function"
                     variation="secondary"
-                    class="square-button hocus-visible:text-danger"
                     onClick={handleDeleteFunction}
+                    class="square-button hocus-visible:text-danger"
                 >
                     <FaSolidTrash fill="currentColor" size={14} />
                 </Button>

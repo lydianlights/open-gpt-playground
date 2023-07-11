@@ -43,6 +43,7 @@ function formatMessages(
             apiMessage.content = message.content;
         } else if (message.role === "assistant") {
             if (message.useFunction) {
+                apiMessage.content = "";
                 apiMessage.function_call = {
                     name: message.functionName,
                     arguments: message.functionParameters,

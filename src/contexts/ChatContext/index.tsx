@@ -98,6 +98,7 @@ export type ChatContextFuncs = {
 
     submit: () => Promise<void>;
     setError: (value: string) => void;
+    loadState: (state: Partial<ChatContextState>) => void;
 };
 
 export type ChatContextValue = [
@@ -108,7 +109,7 @@ export type ChatContextValue = [
 // ====== DEFAULTS ===== //
 export function getDefaultMessage(): GPTMessage {
     return {
-        id: nanoid(),
+        id: `usergen-${nanoid(20)}`,
         role: "user",
         content: "",
         functionName: "",
@@ -119,7 +120,7 @@ export function getDefaultMessage(): GPTMessage {
 
 export function getDefaultFunction(): GPTFunction {
     return {
-        id: nanoid(),
+        id: `func-${nanoid(20)}`,
         name: "new_function",
         description: "",
         parameters: `{
@@ -197,7 +198,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
                 setState("messages", index, "useFunction", () => value);
             },
             create: (value) => {
-                const newMessage = { id: `usergen-${nanoid(20)}`, ...value };
+                const newMessage = { ...getDefaultMessage(), ...value };
                 setState("messages", (prev) => [...prev, newMessage]);
                 return newMessage;
             },
@@ -224,7 +225,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
                 setState("functions", index, "parameters", () => value);
             },
             create: (value) => {
-                const newFunction = { id: `func-${nanoid(10)}`, ...value };
+                const newFunction = { ...getDefaultFunction(), ...value };
                 setState("functions", (prev) => [...prev, newFunction]);
                 return newFunction;
             },
@@ -247,6 +248,10 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
 
         submit,
         setError: (value) => setState("error", () => value),
+        loadState: (state) => {
+            const defaultState = getDefaultState();
+            setState(merge(defaultState, state));
+        },
     };
 
     async function submit() {
@@ -288,14 +293,13 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
     onMount(() => {
         try {
             const str = loadSessionStorage(STORAGE.STATE);
+            if (!str) return;
             const json = JSON.parse(str);
-            const { schema, version, ...loadedState } = json;
+            const { schema, version, ...state } = json;
             if (schema !== SCHEMA || !version) {
                 throw new Error("Tried to load invalid state data!");
             }
-            const defaultState = getDefaultState();
-            const state = merge(defaultState, loadedState);
-            setState(state);
+            funcs.loadState(state);
         } catch (e) {
             console.error(e);
         }
@@ -313,7 +317,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
         } catch (e) {
             console.error(e);
         }
-    }, 1000);
+    }, 500);
 
     const ctx: ChatContextValue = [state, funcs];
     return (
