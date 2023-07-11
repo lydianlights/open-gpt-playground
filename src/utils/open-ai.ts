@@ -3,7 +3,7 @@ import type {
     ChatCompletionRequestMessage,
     CreateChatCompletionRequest,
 } from "openai";
-import type { ChatContextState } from "@/contexts/ChatContext";
+import type { ChatContextState, ChunkDelta } from "@/contexts/ChatContext";
 
 export function formatChatCompletionRequest(
     state: ChatContextState
@@ -80,4 +80,32 @@ function formatFunctions(state: ChatContextState): ChatCompletionFunctions[] {
     }
 
     return functions;
+}
+
+const streamChunkRegex = /^data: /;
+export function parseStreamChunk(chunk: string): ChunkDelta[] {
+    const deltas: ChunkDelta[] = [];
+
+    const lines = chunk.split("\n");
+    for (const line of lines) {
+        if (line === "") continue;
+        const str = line.replace(streamChunkRegex, "");
+        if (str === "[DONE]") continue;
+        try {
+            const data = JSON.parse(str);
+            const delta: ChunkDelta = {
+                id: data.id,
+                content: data.choices[0].delta.content ?? undefined,
+                function_name:
+                    data.choices[0].delta.function_call?.name ?? undefined,
+                function_arguments:
+                    data.choices[0].delta.function_call?.arguments ?? undefined,
+                done: !!data.choices[0].finish_reason ?? undefined,
+            };
+            deltas.push(delta);
+        } catch {
+            continue;
+        }
+    }
+    return deltas;
 }

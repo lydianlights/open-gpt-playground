@@ -40,6 +40,7 @@ export const DEFAULT_PRESETS: ChatPresetRecord = {
             {
                 ...getDefaultMessage(),
                 role: "function",
+                functionName: "get_current_weather",
                 functionParameters: '"Partly cloudy 84°F"',
             },
             {

@@ -72,7 +72,7 @@ const ChatSection: Component<ChatSectionProps> = () => {
                 <Button
                     onClick={submit}
                     variation="primary"
-                    disabled={!apiKey()}
+                    disabled={!apiKey() || state.generating}
                 >
                     Submit
                 </Button>

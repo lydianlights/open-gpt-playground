@@ -6,9 +6,7 @@ import { nanoid } from "nanoid";
 import debounce from "lodash/debounce";
 import merge from "lodash/merge";
 import cloneDeep from "lodash/cloneDeep";
-import type { Optional } from "@/types/helpers";
-import { Configuration, OpenAIApi } from "openai";
-import { formatChatCompletionRequest } from "@/utils/open-ai";
+import { formatChatCompletionRequest, parseStreamChunk } from "@/utils/open-ai";
 import { loadSessionStorage, saveSessionStorage } from "@/utils/local-storage";
 import { STORAGE } from "@/constants/local-storage";
 import { apiKey } from "@/contexts/global";
@@ -63,6 +61,14 @@ export type GPTModelOptions = {
     presencePenalty: number;
 };
 
+export type ChunkDelta = {
+    id: string;
+    content?: string;
+    function_name?: string;
+    function_arguments?: string;
+    done?: boolean;
+};
+
 // ====== CONTEXT TYPES ===== //
 export type ChatContextState = {
     systemMessage: string;
@@ -70,7 +76,13 @@ export type ChatContextState = {
     functions: GPTFunction[];
     modelOptions: GPTModelOptions;
     error: string;
+    generating: boolean;
 };
+
+export type SerializableChatState = Omit<
+    ChatContextState,
+    "error" | "generating"
+>;
 
 export type ChatContextFuncs = {
     setSystemMessage: (value: string) => void;
@@ -80,7 +92,7 @@ export type ChatContextFuncs = {
         setFunctionName: (id: string, value: string) => void;
         setFunctionParameters: (id: string, value: string) => void;
         setUseFunction: (id: string, value: boolean) => void;
-        create: (value: Optional<GPTMessage, "id">) => GPTMessage;
+        create: (value: Partial<GPTMessage>) => GPTMessage;
         delete: (id: string) => void;
     };
     functions: {
@@ -99,7 +111,8 @@ export type ChatContextFuncs = {
 
     submit: () => Promise<void>;
     setError: (value: string) => void;
-    loadState: (state: Partial<ChatContextState>) => void;
+    setGenerating: (value: boolean) => void;
+    loadState: (state: Partial<SerializableChatState>) => void;
 };
 
 export type ChatContextValue = [
@@ -110,7 +123,7 @@ export type ChatContextValue = [
 // ====== DEFAULTS ===== //
 export function getDefaultMessage(): GPTMessage {
     return {
-        id: `usergen-${nanoid(20)}`,
+        id: `userdef-${nanoid(20)}`,
         role: "user",
         content: "",
         functionName: "",
@@ -149,6 +162,7 @@ export function getDefaultState(): ChatContextState {
             presencePenalty: 0,
         },
         error: "",
+        generating: false,
     };
 }
 
@@ -249,6 +263,7 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
 
         submit,
         setError: (value) => setState("error", () => value),
+        setGenerating: (value) => setState("generating", () => value),
         loadState: (state) => {
             const defaultState = getDefaultState();
             setState(merge(defaultState, cloneDeep(state)));
@@ -257,37 +272,102 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
 
     async function submit() {
         funcs.setError("");
+        funcs.setGenerating(true);
         try {
-            const configuration = new Configuration({
-                apiKey: apiKey(),
-            });
-            const openai = new OpenAIApi(configuration);
-            const request = formatChatCompletionRequest(state);
-            const response = await openai.createChatCompletion({
-                ...request,
-            });
-            const data = response.data;
-            const message = response.data.choices[0].message!;
-            funcs.messages.create({
-                id: data.id!,
-                role: message.role!,
-                content: message.content!,
-                functionName: "",
-                functionParameters: "",
-                useFunction: false,
-            });
-        } catch (e) {
-            let msg = "";
-            if (
-                e.response?.status === 400 &&
-                e.response?.data?.error?.message
-            ) {
-                msg =
-                    "Request failed. Make sure all functions' parameters describe a valid JSON Schema.";
-            } else {
-                msg = e.toString();
+            // Lol openai's js library doesn't handle streaming I guess I have to do it myself...
+            const body = {
+                ...formatChatCompletionRequest(state),
+                stream: true,
+            };
+            const response = await fetch(
+                "https://api.openai.com/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey()}`,
+                    },
+                    body: JSON.stringify(body),
+                }
+            );
+            if (!response.ok) {
+                const err = Error(response.statusText) as any;
+                err.statusCode = response.status;
+                throw err;
             }
-            funcs.setError(msg);
+
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error("Unknown error");
+            }
+            const decoder = new TextDecoder("utf-8");
+
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+                const chunk = decoder.decode(value);
+                const deltas = parseStreamChunk(chunk);
+                for (const delta of deltas) {
+                    applyDelta(delta);
+                }
+            }
+        } catch (e) {
+            if (e.statusCode === 400) {
+                funcs.setError(
+                    "Request failed by OpenAI's validation. Function names must contain only [a-z0-9_-] and at most 64 characters. Function parameters must describe a JSON Schema. See the docs for details."
+                );
+            } else {
+                funcs.setError("An unknown error occurred during generation");
+            }
+            setState("generating", false);
+        }
+    }
+
+    function applyDelta(delta: ChunkDelta) {
+        const index = state.messages.findIndex((m) => m.id === delta.id);
+        if (index < 0) {
+            const message: Partial<GPTMessage> = {
+                id: delta.id,
+                role: "assistant",
+                content: delta.content,
+                functionName: delta.function_name,
+                functionParameters: delta.function_arguments,
+                useFunction: !!(
+                    delta.function_name || delta.function_arguments
+                ),
+            };
+            funcs.messages.create(message);
+        } else {
+            if (delta.content) {
+                setState(
+                    "messages",
+                    index,
+                    "content",
+                    (prev) => prev + delta.content
+                );
+            }
+            if (delta.function_name) {
+                setState(
+                    "messages",
+                    index,
+                    "functionName",
+                    (prev) => prev + delta.function_name
+                );
+            }
+            if (delta.function_arguments) {
+                setState(
+                    "messages",
+                    index,
+                    "functionParameters",
+                    (prev) => prev + delta.function_arguments
+                );
+            }
+        }
+        if (delta.done) {
+            setState("generating", false);
         }
     }
 
@@ -308,10 +388,16 @@ export const ChatProvider: Component<ChatProviderProps> = (props) => {
 
     const trackStateChanges = debounce((state: ChatContextState) => {
         try {
+            const serializableState: SerializableChatState = {
+                modelOptions: state.modelOptions,
+                systemMessage: state.systemMessage,
+                messages: state.messages,
+                functions: state.functions,
+            };
             const json: any = {
                 schema: SCHEMA,
                 version: VERSION,
-                ...state,
+                ...serializableState,
             };
             const str = JSON.stringify(json);
             saveSessionStorage(STORAGE.STATE, str);

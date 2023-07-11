@@ -24,7 +24,6 @@
         "crypto-js": "^4.1.1",
         "lodash": "^4.17.21",
         "nanoid": "^4.0.2",
-        "openai": "^3.3.0",
         "solid-icons": "^1.0.8",
         "solid-js": "^1.7.6",
         "solid-transition-group": "^0.2.2"
@@ -39,6 +38,7 @@
         "eslint-config-prettier": "^8.8.0",
         "eslint-plugin-prettier": "^4.2.1",
         "eslint-plugin-solid": "^0.12.1",
+        "openai": "^3.3.0",
         "postcss": "^8.4.24",
         "prettier": "^2.8.8",
         "solid-devtools": "^0.27.3",
