@@ -1,3 +1,7 @@
+# Live Site
+
+https://lydianlights.github.io/open-gpt-playground/
+
 # Why?
 
 OpenAI's official playground is currently missing features for saving/loading Chat Completions, and for testing the new Functions capability. I want a playground environment that I can keep up to date with my own needs.

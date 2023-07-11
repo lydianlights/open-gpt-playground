@@ -6,6 +6,8 @@
         "dev": "vite",
         "build": "vite build",
         "serve": "vite preview",
+        "predeploy": "npm run build",
+        "deploy": "gh-pages -d dist",
         "lint": "eslint . --fix"
     },
     "dependencies": {
@@ -38,6 +40,7 @@
         "eslint-config-prettier": "^8.8.0",
         "eslint-plugin-prettier": "^4.2.1",
         "eslint-plugin-solid": "^0.12.1",
+        "gh-pages": "^5.0.0",
         "openai": "^3.3.0",
         "postcss": "^8.4.24",
         "prettier": "^2.8.8",
